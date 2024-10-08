@@ -1,101 +1,150 @@
-import Image from "next/image";
+'use client';
 
-export default function Home() {
+import React, { useState, useEffect, useRef } from 'react';
+
+interface Thermostat {
+  name: string;
+  x: number;
+  y: number;
+  active: boolean;
+  bias: number;
+  temperature: number;
+}
+
+const App: React.FC = () => {
+  const [thermostats, setThermostats] = useState<Thermostat[]>([]);
+  const [energy, setEnergy] = useState<number>(0);
+  const [averageTemp, setAverageTemp] = useState<number>(22);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+
+  const weights: number[][] = Array.from({ length: 8 }, () =>
+    Array.from({ length: 8 }, () => Math.random() - 0.5)
+  );
+
+  useEffect(() => {
+    const initialThermostats: Thermostat[] = [
+      { name: "Thermostat A", x: 100, y: 100, active: Math.random() > 0.5, bias: Math.random() - 0.5, temperature: 22 },
+      { name: "Thermostat B", x: 500, y: 100, active: Math.random() > 0.5, bias: Math.random() - 0.5, temperature: 22 },
+      { name: "Thermostat C", x: 100, y: 500, active: Math.random() > 0.5, bias: Math.random() - 0.5, temperature: 22 },
+      { name: "Thermostat D", x: 500, y: 500, active: Math.random() > 0.5, bias: Math.random() - 0.5, temperature: 22 },
+      { name: "Thermostat E", x: 300, y: 100, active: Math.random() > 0.5, bias: Math.random() - 0.5, temperature: 22 },
+      { name: "Thermostat F", x: 100, y: 300, active: Math.random() > 0.5, bias: Math.random() - 0.5, temperature: 22 },
+      { name: "Thermostat G", x: 500, y: 300, active: Math.random() > 0.5, bias: Math.random() - 0.5, temperature: 22 },
+      { name: "Thermostat H", x: 300, y: 500, active: Math.random() > 0.5, bias: Math.random() - 0.5, temperature: 22 }
+    ];
+    setThermostats(initialThermostats);
+  }, []);
+
+  const sigmoid = (x: number): number => 1 / (1 + Math.exp(-x));
+
+  const updateThermostats = () => {
+    setThermostats(prevThermostats =>
+      prevThermostats.map((thermostat, i) => {
+        let weightedSum = thermostat.bias;
+        prevThermostats.forEach((otherThermostat, j) => {
+          if (i !== j) {
+            weightedSum += weights[i][j] * (otherThermostat.active ? 1 : 0);
+          }
+        });
+
+        const probability = sigmoid(weightedSum);
+        const newActive = Math.random() < probability;
+        const newTemperature = newActive
+          ? Math.min(thermostat.temperature + 0.5, 26)
+          : Math.max(thermostat.temperature - 0.5, 18);
+
+        return {
+          ...thermostat,
+          active: newActive,
+          temperature: newTemperature
+        };
+      })
+    );
+  };
+
+  const calculateEnergy = () => {
+    let energyValue = 0;
+    thermostats.forEach((thermostat_i, i) => {
+      thermostats.forEach((thermostat_j, j) => {
+        if (i !== j) {
+          energyValue -= weights[i][j] * (thermostat_i.active ? 1 : 0) * (thermostat_j.active ? 1 : 0);
+        }
+      });
+      energyValue -= thermostat_i.bias * (thermostat_i.active ? 1 : 0);
+    });
+    setEnergy(energyValue);
+  };
+
+  const calculateAverageTemperature = () => {
+    const totalTemperature = thermostats.reduce((sum, thermostat) => sum + thermostat.temperature, 0);
+    setAverageTemp(Number((totalTemperature / thermostats.length).toFixed(1)));
+  };
+
+  const drawCanvas = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    for (let i = 0; i < thermostats.length; i++) {
+      for (let j = i + 1; j < thermostats.length; j++) {
+        if (weights[i][j] !== 0) {
+          const fromNode = thermostats[i];
+          const toNode = thermostats[j];
+          ctx.beginPath();
+          ctx.moveTo(fromNode.x, fromNode.y);
+          ctx.lineTo(toNode.x, toNode.y);
+          ctx.strokeStyle = fromNode.active === toNode.active ? "green" : "red";
+          ctx.lineWidth = 2;
+          ctx.stroke();
+        }
+      }
+    }
+
+    thermostats.forEach(thermostat => {
+      ctx.beginPath();
+      ctx.arc(thermostat.x, thermostat.y, 20, 0, Math.PI * 2);
+      ctx.fillStyle = thermostat.active ? "#ffab40" : "#757575";
+      ctx.fill();
+      ctx.strokeStyle = "#e0e0e0";
+      ctx.stroke();
+      ctx.fillStyle = "#e0e0e0";
+      ctx.fillText(thermostat.name, thermostat.x - 20, thermostat.y + 35);
+    });
+
+  };
+
+  useEffect(() => {
+    if (thermostats.length > 0) {
+      const intervalId = setInterval(() => {
+        updateThermostats();
+        calculateEnergy();
+        calculateAverageTemperature();
+        drawCanvas();
+      }, 1000);
+      return () => clearInterval(intervalId);
+    }
+  }, [thermostats]);
+
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="https://nextjs.org/icons/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
-
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="https://nextjs.org/icons/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+    <div className="App">
+      <h1>Boltzmann Machine Thermostat Simulation</h1>
+      <canvas ref={canvasRef} width="600" height="600" />
+      <div id="infoPanel">
+        <h3>Thermostat Status</h3>
+        {thermostats.map((thermostat) => (
+          <p key={thermostat.name}>
+            {thermostat.name}: {thermostat.active ? "Active - Heating" : "Passive - Standby"},
+            Temp: {thermostat.temperature.toFixed(1)}°C
+          </p>
+        ))}
+        <h4>Current Energy Saving: {energy.toFixed(2)}</h4>
+        <h4>Current Avg Temperature: {averageTemp} °C</h4>
+      </div>
     </div>
   );
-}
+};
+
+export default App;

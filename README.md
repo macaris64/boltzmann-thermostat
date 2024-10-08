@@ -1,6 +1,46 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+## Boltzmann Machine Thermostat Simulation
 
-## Getting Started
+In this simulation, we are modeling the concept of a Boltzmann Machine using thermostats that adjust the temperature to maintain an optimal balance. The thermostats communicate with each other and attempt to achieve a low-energy, stable state. Here’s a breakdown of how the Boltzmann Machine principles are represented through the thermostat simulation:
+
+### Thermostat Principles
+
+#### Thermostat States
+
+Each thermostat node has two possible states:
+
+- **Active**: When the thermostat is on and heating, represented visually by an orange color.
+- **Passive**: When the thermostat is in standby, represented by a gray color.
+
+An active state indicates the thermostat is heating its area, while a passive state means the thermostat is not consuming energy.
+
+#### Energy and State Changes
+
+- The thermostats are connected by virtual "links," which represent the influence each thermostat has on others. These links have weights that contribute to the overall energy in the system.
+- The Boltzmann Machine tries to minimize energy across all nodes. Thermostats shift between active and passive states based on the state of neighboring thermostats. This balance allows the system to find a state where energy is minimized, which is the Boltzmann Machine’s goal.
+
+#### Temperature Adjustments
+
+- When a thermostat is active, its local temperature increases slightly, symbolizing the heating effect.
+- If the thermostat is passive, the local temperature decreases slightly.
+- Temperatures are capped between 18 and 26 degrees Celsius to mimic a realistic thermostat range.
+
+#### Energy Calculation
+
+- Energy in this simulation is a measure of the overall system's effort to stabilize. Each thermostat has a bias (a fixed tendency to prefer heating or cooling), and connections between thermostats have weights that represent the relationship between them.
+- The system calculates energy based on the sum of these interactions. Thermostats update their states to minimize this energy, which represents how a Boltzmann Machine processes inputs.
+
+#### Sigmoid Function and Probability
+
+- For each thermostat, we calculate the probability of it turning on based on its bias and connections to other thermostats.
+- This is done using a sigmoid function, a mathematical function that maps the weighted sum of connections to a probability between 0 and 1.
+- The randomness of the system allows the thermostat to switch states with probabilities that reflect natural variations, helping it move towards a low-energy, balanced state.
+
+### Summary
+
+The simulation allows you to observe how a system of thermostats, connected like a Boltzmann Machine, can reach a stable, low-energy configuration by updating states based on interactions and minimizing energy consumption. This represents how neural networks, inspired by Boltzmann Machines, adapt to different inputs and find balance within a network.
+
+
+## Run the Simulation
 
 First, run the development server:
 
@@ -15,22 +55,3 @@ bun dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
